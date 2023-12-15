@@ -1,0 +1,49 @@
+var processingNotes = '';
+var eventRule = '';
+var evRuleHash = {};
+analyzeEvents();
+printHash();
+function analyzeEvents() {
+    var grEv = new GlideRecord('em_event');
+// if its PDI uncomment first query, if its client Dev instance uncomment second query.
+	//var enQuery = 'sys_created_onONThis month@javascript:gs.beginningOfThisMonth()@javascript:gs.endOfThisMonth()';
+    //var enQuery = 'sys_created_onONToday@javascript:gs.beginningOfToday()@javascript:gs.endOfToday()^processing_notesLIKEEvent rule applied:';
+    grEv.addEncodedQuery(enQuery);
+    grEv.query();
+    while (grEv.next()) {
+        eventRule = getEvRule(grEv.processing_notes);
+        eventRule = grEv.source + "|" + eventRule;
+        evRuleHash[eventRule] = 1;
+    }
+}
+
+function getEvRule(pNotes) {
+    var pNotes2 = '';
+    var evRuleArr = [];
+    var pNotes2Arr = [];
+    var evRule = 'No Rule Found';
+    pNotes = pNotes.replaceAll('Event rule applied:', "|");
+    evRuleArr = pNotes.split("|");
+    pNotes2 = evRuleArr[1];
+    evRule = evRuleArr[1];
+    if (pNotes2.indexOf('Alert') > -1) {
+        pNotes2 = pNotes.replaceAll('Alert', "|");
+        pNotes2Arr = pNotes2.split("|");
+        evRule = pNotes2Arr[1];
+    } else {
+        // no action;
+    }
+    evRule = evRule.trim();
+    if (global.JSUtil.nil(evRule)) {
+        evRule = "No Rule Found";
+    }
+    return evRule;
+}
+
+function printHash() {
+	var sDebug = '';
+    for (var k in evRuleHash) {
+		sDebug += k + "\n";
+    }
+gs.log(sDebug, 'GetEventRulesInUse');
+}
